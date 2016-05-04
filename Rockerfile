@@ -1,0 +1,7 @@
+FROM golang
+MOUNT .:/go/src/github.com/tulip/terraform-provider-logentries
+WORKDIR /go/src/github.com/tulip/terraform-provider-logentries
+ATTACH ["/bin/bash"]
+RUN go get
+TAG terraform-provider-logentries-buildenv
+RUN go build
