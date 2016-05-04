@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 
-	"github.com/donaldguy/terraform-provider-logentries/logentriesapi"
+	le "github.com/logentries/le_goclient"
 )
 
 func provider() terraform.ResourceProvider {
@@ -26,5 +26,5 @@ func provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	return logentriesapi.NewClient(d.Get("account_key").(string)), nil
+	return le.NewClient(d.Get("account_key").(string)), nil
 }
