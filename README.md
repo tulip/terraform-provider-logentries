@@ -18,7 +18,7 @@ resource "logentries_logset" "my_host" {
 
 resource "logentries_log" "my_log" {
   name = "terraform_test_log"
-  in_logset_with_key = "${logentries_logset.my_host.key}"
+  logset_id = "${logentries_logset.my_host.id}"
 }
 ```
 

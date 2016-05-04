@@ -17,24 +17,7 @@ func resourceLogset() *schema.Resource {
 			"location": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-			},
-			"dist_name": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"dist_ver": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"system": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			//computed
-			"key": &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "Primary key / ID of the log",
-				Computed:    true,
+				Default:  "nonlocation",
 			},
 		},
 		Create: logsetCreate,
@@ -45,32 +28,17 @@ func resourceLogset() *schema.Resource {
 }
 
 func setLogSetVals(d *schema.ResourceData, logSet *le.LogSet) {
-	d.Set("key", logSet.Key)
 	d.Set("name", logSet.Name)
 	d.Set("location", logSet.Location)
-	d.Set("dist_name", logSet.Distname)
-	d.Set("dist_ver", logSet.Distver)
 }
 
 func logsetCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*le.Client)
-	req := le.LogSetCreateRequest{}
-	req.Name = d.Get("name").(string)
+	logSet, err := client.LogSet.Create(le.LogSetCreateRequest{
+		Name:     d.Get("name").(string),
+		Location: d.Get("location").(string),
+	})
 
-	if val, ok := d.GetOk("location"); ok {
-		req.Location = val.(string)
-	}
-	if val, ok := d.GetOk("dist_name"); ok {
-		req.DistName = val.(string)
-	}
-	if val, ok := d.GetOk("dist_ver"); ok {
-		req.DistVer = val.(string)
-	}
-	if val, ok := d.GetOk("system"); ok {
-		req.System = val.(string)
-	}
-
-	logSet, err := client.LogSet.Create(req)
 	if err != nil {
 		return err
 	}

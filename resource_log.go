@@ -15,7 +15,7 @@ func resourceLog() *schema.Resource {
 				Description: "Name of the log",
 				Required:    true,
 			},
-			"in_logset_with_key": &schema.Schema{
+			"logset_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "Key of logset under which to parent the log",
 				Required:    true,
@@ -27,34 +27,21 @@ func resourceLog() *schema.Resource {
 				Optional: true,
 				Default:  "token",
 			},
-			"retention": &schema.Schema{
+			"retention_period": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 				Default:  "-1",
 			},
-			//strictly Optional
-			"filename": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-			},
+			//strictly optional
 			"type": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
 			},
 			//strictly computed
-			"key": &schema.Schema{
-				Type:        schema.TypeString,
-				Description: "Primary key / ID of the log",
-				Computed:    true,
-			},
 			"token": &schema.Schema{
 				Type:        schema.TypeString,
 				Description: "Token used to submit data to log",
 				Computed:    true,
-			},
-			"follow": &schema.Schema{
-				Type:     schema.TypeString,
-				Computed: true,
 			},
 		},
 		Create: logCreate,
@@ -65,18 +52,12 @@ func resourceLog() *schema.Resource {
 }
 
 func setLogVals(d *schema.ResourceData, log *le.Log) {
-	d.Set("name", log.Name)
-
-	d.Set("key", log.Key)
 	d.Set("token", log.Token)
 
-	d.Set("type", log.Type)
-	d.Set("retention", log.Retention)
-
-	d.Set("filename", log.Filename)
+	d.Set("name", log.Name)
 	d.Set("source", log.Source)
-	d.Set("follow", log.Follow)
-
+	d.Set("retention_period", log.Retention)
+	d.Set("type", log.Type)
 }
 
 func logCreate(d *schema.ResourceData, meta interface{}) error {
@@ -84,14 +65,11 @@ func logCreate(d *schema.ResourceData, meta interface{}) error {
 
 	req := le.LogCreateRequest{}
 	req.Name = d.Get("name").(string)
-	req.LogSetKey = d.Get("in_logset_with_key").(string)
-	req.Retention = d.Get("retention").(string)
+	req.LogSetKey = d.Get("logset_id").(string)
+	req.Retention = d.Get("retention_period").(string)
 	req.Source = d.Get("source").(string)
 
-	if v, ok := d.GetOk("filename"); ok {
-		req.Filename = v.(string)
-	}
-	if v, ok := d.GetOk("source"); ok {
+	if v, ok := d.GetOk("type"); ok {
 		req.Source = v.(string)
 	}
 
@@ -126,7 +104,7 @@ func logUpdate(d *schema.ResourceData, meta interface{}) error {
 		Name:      d.Get("name").(string),
 		Type:      d.Get("type").(string),
 		Source:    d.Get("source").(string),
-		Retention: d.Get("retention").(string),
+		Retention: d.Get("retention_period").(string),
 	})
 	if err != nil {
 		return err
@@ -138,11 +116,11 @@ func logUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func logDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*le.Client)
-	req := le.LogDeleteRequest{}
-	req.Key = d.Id()
-	req.LogSetKey = d.Get("in_logset_with_key").(string)
 
-	err := client.Log.Delete(req)
+	err := client.Log.Delete(le.LogDeleteRequest{
+		Key:       d.Id(),
+		LogSetKey: d.Get("logset_id").(string),
+	})
 
 	if err != nil {
 		return err
